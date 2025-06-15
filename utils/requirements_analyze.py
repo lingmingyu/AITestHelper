@@ -12,11 +12,15 @@ logger = get_logger()
 def analyze_requirement(llm, requirement):
     try:
         parser = JsonOutputParser(pydantic_object=Requirement)
-        requirement_prompt = PromptTemplate.from_template(settings.REQUIREMENT_PROMPT).partial(
-            format_instructions=parser.get_format_instructions())
+        requirement_prompt = PromptTemplate.from_template(
+            settings.REQUIREMENT_PROMPT
+        ).partial(format_instructions=parser.get_format_instructions())
         chain = requirement_prompt | llm | parser
-        result = chain.invoke(requirement)
+        # "REQUIREMENT_PROMPT" 模板中使用的是 ``{context}`` 占位符，
+        # 因此在调用時需要使用相同的鍵名傳入內容
+        result = chain.invoke({"context": requirement})
         return result
     except Exception as e:
         logger.debug(f"解析需求失败{str(e)}")
+        return None
 
